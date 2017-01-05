@@ -55,7 +55,7 @@ func Execute() {
 func init() {
 	cobra.OnInitialize(initConfig)
 
-	RootCmd.PersistentFlags().StringVarP(&cfgFile, "config", "c", "", "config file (default is $HOME/.keepup.yaml)")
+	RootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.keepup.yaml)")
 	RootCmd.PersistentFlags().StringVar(&zone, "zone", "", "the dns zone to work on (domain.com)")
 	RootCmd.PersistentFlags().StringVar(&dnsRecord, "dns", "", "the dns record to be updated (my.domain.com)")
 	RootCmd.PersistentFlags().StringVar(&ip, "ip", "", "the ip that will be used to update the dns record (127.0.0.1)")
@@ -67,12 +67,8 @@ func initConfig() {
 		viper.SetConfigFile(cfgFile)
 	}
 
-	viper.SetConfigName(".keepup") // name of config file (without extension)
-	viper.AddConfigPath("$HOME")   // adding home directory as first search path
-	viper.AutomaticEnv()           // read in environment variables that match
-
 	// If a config file is found, read it in.
 	if err := viper.ReadInConfig(); err == nil {
-		// fmt.Println("Using config file:", viper.ConfigFileUsed())
+		fmt.Println("Using config file:", viper.ConfigFileUsed())
 	}
 }

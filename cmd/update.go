@@ -34,7 +34,6 @@ import (
 var updateCmd = &cobra.Command{
 	Use:   "update",
 	Short: "Updates the dns record with current ip",
-	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
 		var err error
 		var currentIP string
@@ -58,8 +57,12 @@ var updateCmd = &cobra.Command{
 
 		if record.Content != currentIP {
 			record.Content = strings.TrimSpace(currentIP)
-			client.UpdateDNSRecord(record)
+			err = client.UpdateDNSRecord(record)
+			if err != nil {
+				log.Fatal(err)
+			}
 		}
+
 		fmt.Println("DNS updated to:", record.Name, record.Content)
 	},
 }
