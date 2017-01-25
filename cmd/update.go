@@ -22,7 +22,9 @@ package cmd
 
 import (
 	"fmt"
+	"io/ioutil"
 	"log"
+	"os"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -37,10 +39,6 @@ var updateCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		var err error
 		var currentIP string
-		client, err := cfgo.NewClient(viper.GetString("cfKey"), viper.GetString("cfEmail"))
-		if err != nil {
-			log.Fatal(err)
-		}
 
 		if len(ip) > 7 {
 			currentIP = ip
@@ -50,6 +48,22 @@ var updateCmd = &cobra.Command{
 				log.Fatal(err)
 			}
 		}
+
+		oldIP, err := ioutil.ReadFile(os.Getenv("HOME") + "/.currentip.txt")
+		if err != nil {
+			log.Println("not currentip.txt file found, needs to update ip")
+		}
+
+		if string(oldIP) == currentIP {
+			fmt.Println("current and old ip are the same, no need to update")
+			return
+		}
+
+		client, err := cfgo.NewClient(viper.GetString("cfKey"), viper.GetString("cfEmail"))
+		if err != nil {
+			log.Fatal(err)
+		}
+
 		record, err := client.GetDNSRecord(zone, dnsRecord)
 		if err != nil {
 			log.Fatal(err)
@@ -64,6 +78,13 @@ var updateCmd = &cobra.Command{
 		}
 
 		fmt.Println("DNS updated to:", record.Name, record.Content)
+
+		ipfile, err := os.Create(os.Getenv("HOME") + "/.currentip.txt")
+		if err != nil {
+			log.Fatal(err)
+		}
+		ipfile.Write([]byte(currentIP))
+		defer ipfile.Close()
 	},
 }
 
