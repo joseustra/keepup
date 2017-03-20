@@ -21,14 +21,9 @@
 package cmd
 
 import (
-	"encoding/json"
-	"fmt"
 	"log"
-	"strings"
 
-	"github.com/boltdb/bolt"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 	"github.com/ustrajunior/keepup/cfgo"
 )
 
@@ -37,73 +32,9 @@ var updateCmd = &cobra.Command{
 	Use:   "update",
 	Short: "Updates the dns record with current ip",
 	Run: func(cmd *cobra.Command, args []string) {
-		var err error
-		var currentIP string
-		domain := &Domain{}
-
-		if len(ip) > 7 {
-			currentIP = ip
-		} else {
-			currentIP, err = cfgo.GetIPV4IP()
-			if err != nil {
-				log.Fatal(err)
-			}
-		}
-
-		if !force {
-			db.View(func(tx *bolt.Tx) error {
-				b := tx.Bucket([]byte("domains"))
-				v := b.Get([]byte(fmt.Sprintf("%s-%s", zone, dnsRecord)))
-
-				if len(v) > 0 {
-					json.Unmarshal(v, domain)
-				}
-				return nil
-			})
-
-			if len(domain.IP) >= 7 {
-				if domain.IP == currentIP {
-					fmt.Println("current and old ip are the same, no need to update")
-					return
-				}
-			}
-		}
-
-		client, err := cfgo.NewClient(viper.GetString("cfKey"), viper.GetString("cfEmail"))
+		err := cfgo.UpdateRecord(storage, cfClient, zone, dnsRecord, ip, force)
 		if err != nil {
 			log.Fatal(err)
-		}
-
-		record, err := client.GetDNSRecord(zone, dnsRecord)
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		if record.Content != currentIP {
-			record.Content = strings.TrimSpace(currentIP)
-			err = client.UpdateDNSRecord(record)
-			if err != nil {
-				log.Fatal(err)
-			}
-		}
-
-		domain = &Domain{
-			zone,
-			record.Name,
-			record.Content,
-		}
-
-		fmt.Printf("DNS updated to: %s %s\n", domain.DNS, domain.IP)
-
-		err = db.Update(func(tx *bolt.Tx) error {
-			b := tx.Bucket([]byte("domains"))
-			j, _ := json.Marshal(domain)
-			err := b.Put([]byte(fmt.Sprintf("%s-%s", zone, domain.DNS)), j)
-			return err
-		})
-
-		if err != nil {
-			panic(err)
 		}
 	},
 }

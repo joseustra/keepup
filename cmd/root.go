@@ -22,13 +22,12 @@ package cmd
 
 import (
 	"fmt"
-	"log"
 	"os"
 
-	"github.com/boltdb/bolt"
 	"github.com/cloudflare/cloudflare-go"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"github.com/ustrajunior/keepup/cfgo"
 )
 
 var (
@@ -39,7 +38,8 @@ var (
 	ip        string
 	force     bool
 
-	db *bolt.DB
+	storage  *cfgo.Bolt
+	cfClient *cfgo.CloudflareClient
 )
 
 // RootCmd represents the base command when called without any subcommands
@@ -53,20 +53,12 @@ var RootCmd = &cobra.Command{
 // Execute adds all child commands to the root command sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
-	db = openBoltDB()
-	defer db.Close()
-
 	if err := RootCmd.Execute(); err != nil {
 		fmt.Println(err)
 		os.Exit(-1)
 	}
-}
 
-// Domain a single domain on the dns
-type Domain struct {
-	Zone string
-	DNS  string
-	IP   string
+	storage.DB.Close()
 }
 
 func init() {
@@ -93,34 +85,13 @@ func initConfig() {
 	if err := viper.ReadInConfig(); err == nil {
 		fmt.Println("Using config file:", viper.ConfigFileUsed())
 	}
-}
 
-func openBoltDB() *bolt.DB {
-	keepupFolder := fmt.Sprintf("%s/.keepup/", os.Getenv("HOME"))
+	var err error
+	storage = cfgo.NewBolt(fmt.Sprintf("%s/.keepup/", os.Getenv("HOME")))
 
-	if _, err := os.Stat(keepupFolder); os.IsNotExist(err) {
-		os.Mkdir(keepupFolder, 0777)
-	}
-
-	db, err := bolt.Open(keepupFolder+"keepup.db", 0600, nil)
+	cfClient, err = cfgo.NewCloudflareClient(viper.GetString("cfKey"), viper.GetString("cfEmail"))
 	if err != nil {
-		log.Fatal(err)
+		fmt.Println(err)
+		os.Exit(-1)
 	}
-
-	tx, err := db.Begin(true)
-	if err != nil {
-		return nil
-	}
-	defer tx.Rollback()
-
-	_, err = tx.CreateBucketIfNotExists([]byte("domains"))
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	if err = tx.Commit(); err != nil {
-		log.Fatal(err)
-	}
-
-	return db
 }

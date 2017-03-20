@@ -4,24 +4,17 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-
-	"github.com/cloudflare/cloudflare-go"
+	"strings"
 )
 
-// Client the client that will handle the Cloudflare api
-type Client struct {
-	API *cloudflare.API
-}
-
-// NewClient ...
-func NewClient(cfKey, cfEmail string) (*Client, error) {
-	api, err := cloudflare.New(cfKey, cfEmail)
-	if err != nil {
-		return nil, err
-	}
-	client := &Client{API: api}
-
-	return client, nil
+// Domain a single domain on the dns
+type Domain struct {
+	ZoneID   string // the identifier of the zone on cloudflare
+	RecordID string // the identifer of the record on cloudflare
+	Type     string // valid values: A, AAAA, CNAME, TXT, SRV, LOC, MX, NS, SPF
+	Zone     string // cloudflare zone
+	DNS      string // cloudflare dns (the domain that will be handled)
+	IP       string // the ip of the domain
 }
 
 // GetIPV4IP gets the current external ipv4 ip
@@ -32,35 +25,6 @@ func GetIPV4IP() (string, error) {
 // GetIPV6IP gets the current external ipv6 ip
 func GetIPV6IP() (string, error) {
 	return getExternalIP("ipv6")
-}
-
-// GetDNSRecord gets the Cloudflare DNS record for the given value
-//
-// zone is the cloudflare domain you are working on
-// eg: domain.com
-//
-// dns is the address you want get the DNSRecord
-// eg: my.domain.com
-//
-// The first matching DNSRecord will be returned
-func (c *Client) GetDNSRecord(zone, dns string) (cloudflare.DNSRecord, error) {
-	zoneID, err := c.API.ZoneIDByName(zone)
-	if err != nil {
-		return cloudflare.DNSRecord{}, err
-	}
-
-	rr := cloudflare.DNSRecord{Name: dns}
-	rrs, err := c.API.DNSRecords(zoneID, rr)
-	if err != nil {
-		return cloudflare.DNSRecord{}, err
-	}
-
-	return rrs[0], nil
-}
-
-// UpdateDNSRecord updates the Cloudflare DNSRecord
-func (c *Client) UpdateDNSRecord(record cloudflare.DNSRecord) error {
-	return c.API.UpdateDNSRecord(record.ZoneID, record.ID, record)
 }
 
 func getExternalIP(p string) (string, error) {
@@ -75,5 +39,5 @@ func getExternalIP(p string) (string, error) {
 		return "", err
 	}
 
-	return string(ip), nil
+	return strings.TrimSpace(string(ip)), nil
 }
