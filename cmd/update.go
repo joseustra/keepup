@@ -21,12 +21,12 @@
 package cmd
 
 import (
+	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"log"
-	"os"
 	"strings"
 
+	"github.com/boltdb/bolt"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/ustrajunior/keepup/cfgo"
@@ -39,6 +39,7 @@ var updateCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		var err error
 		var currentIP string
+		domain := &Domain{}
 
 		if len(ip) > 7 {
 			currentIP = ip
@@ -50,14 +51,21 @@ var updateCmd = &cobra.Command{
 		}
 
 		if !force {
-			oldIP, err := ioutil.ReadFile(os.Getenv("HOME") + "/.currentip.txt")
-			if err != nil {
-				log.Println("not currentip.txt file found, needs to update ip")
-			}
+			db.View(func(tx *bolt.Tx) error {
+				b := tx.Bucket([]byte("domains"))
+				v := b.Get([]byte(fmt.Sprintf("%s-%s", zone, dnsRecord)))
 
-			if string(oldIP) == currentIP {
-				fmt.Println("current and old ip are the same, no need to update")
-				return
+				if len(v) > 0 {
+					json.Unmarshal(v, domain)
+				}
+				return nil
+			})
+
+			if len(domain.IP) >= 7 {
+				if domain.IP == currentIP {
+					fmt.Println("current and old ip are the same, no need to update")
+					return
+				}
 			}
 		}
 
@@ -79,14 +87,24 @@ var updateCmd = &cobra.Command{
 			}
 		}
 
-		fmt.Println("DNS updated to:", record.Name, record.Content)
-
-		ipfile, err := os.Create(os.Getenv("HOME") + "/.currentip.txt")
-		if err != nil {
-			log.Fatal(err)
+		domain = &Domain{
+			zone,
+			record.Name,
+			record.Content,
 		}
-		ipfile.Write([]byte(currentIP))
-		defer ipfile.Close()
+
+		fmt.Printf("DNS updated to: %s %s\n", domain.DNS, domain.IP)
+
+		err = db.Update(func(tx *bolt.Tx) error {
+			b := tx.Bucket([]byte("domains"))
+			j, _ := json.Marshal(domain)
+			err := b.Put([]byte(fmt.Sprintf("%s-%s", zone, domain.DNS)), j)
+			return err
+		})
+
+		if err != nil {
+			panic(err)
+		}
 	},
 }
 
