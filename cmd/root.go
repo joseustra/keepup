@@ -29,11 +29,14 @@ import (
 	"github.com/spf13/viper"
 )
 
-var api *cloudflare.API
-var cfgFile string
-var zone string
-var dnsRecord string
-var ip string
+var (
+	api       *cloudflare.API
+	cfgFile   string
+	zone      string
+	dnsRecord string
+	ip        string
+	force     bool
+)
 
 // RootCmd represents the base command when called without any subcommands
 var RootCmd = &cobra.Command{
@@ -59,6 +62,7 @@ func init() {
 	RootCmd.PersistentFlags().StringVar(&zone, "zone", "", "the dns zone to work on (domain.com)")
 	RootCmd.PersistentFlags().StringVar(&dnsRecord, "dns", "", "the dns record to be updated (my.domain.com)")
 	RootCmd.PersistentFlags().StringVar(&ip, "ip", "", "the ip that will be used to update the dns record (127.0.0.1)")
+	RootCmd.PersistentFlags().BoolVar(&force, "force", false, "forces the dns update even if the ip is the same")
 }
 
 // initConfig reads in config file and ENV variables if set.

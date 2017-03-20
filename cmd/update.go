@@ -29,7 +29,7 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"github.com/ustrajunior/cfgo"
+	"github.com/ustrajunior/keepup/cfgo"
 )
 
 // updateCmd represents the update command
@@ -49,14 +49,16 @@ var updateCmd = &cobra.Command{
 			}
 		}
 
-		oldIP, err := ioutil.ReadFile(os.Getenv("HOME") + "/.currentip.txt")
-		if err != nil {
-			log.Println("not currentip.txt file found, needs to update ip")
-		}
+		if !force {
+			oldIP, err := ioutil.ReadFile(os.Getenv("HOME") + "/.currentip.txt")
+			if err != nil {
+				log.Println("not currentip.txt file found, needs to update ip")
+			}
 
-		if string(oldIP) == currentIP {
-			fmt.Println("current and old ip are the same, no need to update")
-			return
+			if string(oldIP) == currentIP {
+				fmt.Println("current and old ip are the same, no need to update")
+				return
+			}
 		}
 
 		client, err := cfgo.NewClient(viper.GetString("cfKey"), viper.GetString("cfEmail"))
