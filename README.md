@@ -1,5 +1,8 @@
 # Keepup
 
+[![Code Climate](https://codeclimate.com/github/ustrajunior/keepup/badges/gpa.svg)](https://codeclimate.com/github/ustrajunior/keepup)
+[![Build Status](https://travis-ci.org/ustrajunior/keepup.svg?branch=master)](https://travis-ci.org/ustrajunior/keepup)
+
 Keepup is a command line utility to update your records on [Cloudflare](https://www.cloudflare.com/). It will keep the last IP you updated, so will not be necessary update the record every single time.
 
 ## Instalation
