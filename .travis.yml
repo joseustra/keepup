@@ -5,6 +5,11 @@ go:
   - 1.7
   - 1.8
 
-addons:
-  code_climate:
-    repo_token: b55cd3f6e708e2d78d4da18ba8d6de0772da1abc24558fb920a5227f87111f9a
+before_install:
+  - go get github.com/mattn/goveralls
+
+script:
+  - go vet -v .
+  - go build -v .
+  - go test -v -covermode=count -coverprofile=coverage.out
+  - $HOME/gopath/bin/goveralls -coverprofile=coverage.out -service=travis-ci
