@@ -2,7 +2,6 @@ package cfgo
 
 import (
 	"encoding/json"
-	"fmt"
 	"log"
 	"os"
 
@@ -41,7 +40,7 @@ func (b *Bolt) Save(domain *Domain) error {
 	err := b.DB.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte("domains"))
 		j, _ := json.Marshal(domain)
-		err := b.Put([]byte(fmt.Sprintf("%s-%s", domain.Zone, domain.DNS)), j)
+		err := b.Put([]byte(domain.DNS), j)
 		return err
 	})
 
