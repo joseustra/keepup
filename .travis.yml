@@ -9,7 +9,6 @@ before_install:
   - go get github.com/mattn/goveralls
 
 script:
-  - go vet -v .
-  - go build -v .
-  - go test -v -covermode=count -coverprofile=coverage.out
-  - $HOME/gopath/bin/goveralls -coverprofile=coverage.out -service=travis-ci
+  - go vet -v ./...
+  - go build -v ./...
+  - $HOME/gopath/bin/goveralls -service=travis-ci
