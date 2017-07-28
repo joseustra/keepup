@@ -9,6 +9,6 @@ before_install:
   - go get github.com/mattn/goveralls
 
 script:
-  - go vet -v ./...
-  - go build -v ./...
-  - $HOME/gopath/bin/goveralls -service=travis-ci
+  - go vet -v $(go list ./... | grep -v /vendor/)
+  - go build -v $(go list ./... | grep -v /vendor/)
+  - $HOME/gopath/bin/goveralls -ignore=vendor -service=travis-ci
