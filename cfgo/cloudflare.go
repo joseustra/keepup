@@ -1,6 +1,8 @@
 package cfgo
 
-import "github.com/cloudflare/cloudflare-go"
+import (
+	"github.com/cloudflare/cloudflare-go"
+)
 
 // CloudflareClient the Client that will handle the Cloudflare api
 type CloudflareClient struct {

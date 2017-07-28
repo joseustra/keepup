@@ -49,10 +49,10 @@ func (b *Bolt) Save(domain *Domain) error {
 
 func openBoltDB(path string) *bolt.DB {
 	if _, err := os.Stat(path); os.IsNotExist(err) {
-		os.Mkdir(path, 0644)
+		os.Mkdir(path, 0755)
 	}
 
-	db, err := bolt.Open(path+"keepup.db", 0600, nil)
+	db, err := bolt.Open(path+"keepup.db", 0755, nil)
 	if err != nil {
 		log.Fatal(err)
 	}

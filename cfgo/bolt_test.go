@@ -11,8 +11,24 @@ import (
 )
 
 func newBoltTest() *cfgo.Bolt {
-	path := "/tmp/"
+	path := "/tmp/keepup/"
 	return cfgo.NewBolt(path)
+}
+
+func TestCreateResources(t *testing.T) {
+	path := "/tmp/keepup/"
+	if _, err := os.Stat(path); err == nil {
+		os.RemoveAll(path)
+	}
+
+	b := cfgo.NewBolt(path)
+	defer os.Remove(b.DB.Path())
+	_, err := os.Stat(path)
+
+	assert.False(t, os.IsNotExist(err))
+
+	_, err = os.Stat(path + "keepup.db")
+	assert.False(t, os.IsNotExist(err))
 }
 
 func TestSave(t *testing.T) {
