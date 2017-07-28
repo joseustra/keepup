@@ -34,8 +34,7 @@ func (c *CloudflareClient) GetDNSRecord(zone, dns string) (*Domain, error) {
 		return &Domain{}, err
 	}
 
-	rr := cloudflare.DNSRecord{Name: dns}
-	rrs, err := c.API.DNSRecords(zoneID, rr)
+	rrs, err := c.API.DNSRecords(zoneID, cloudflare.DNSRecord{Name: dns})
 	if err != nil {
 		return &Domain{}, err
 	}
