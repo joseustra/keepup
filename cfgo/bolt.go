@@ -52,7 +52,7 @@ func openBoltDB(path string) *bolt.DB {
 		os.Mkdir(path, 0755)
 	}
 
-	db, err := bolt.Open(path+"keepup.db", 0755, nil)
+	db, err := bolt.Open(path+"keepup.db", 0660, nil)
 	if err != nil {
 		log.Fatal(err)
 	}
