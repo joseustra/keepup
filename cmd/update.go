@@ -32,7 +32,23 @@ var updateCmd = &cobra.Command{
 	Use:   "update",
 	Short: "Updates the dns record with current ip",
 	Run: func(cmd *cobra.Command, args []string) {
-		err := cfgo.UpdateRecord(storage, cfClient, zone, dnsRecord, ip, force)
+		var err error
+
+		if ip == "" {
+			if getKey("netInter") != "" {
+				ip, err = cfgo.GetInterfaceIPV4(getKey("netInter"))
+				if err != nil {
+					log.Fatalf("could not find you interface ip %s: %v", getKey("netInter"), err)
+				}
+			} else {
+				ip, err = cfgo.GetIPV4IP()
+				if err != nil {
+					log.Fatalf("could not find your public ip: %v", err)
+				}
+			}
+		}
+
+		err = cfgo.UpdateRecord(cfClient, getKey("domain"), dnsRecord, ip)
 		if err != nil {
 			log.Fatal(err)
 		}

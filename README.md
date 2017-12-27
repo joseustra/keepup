@@ -3,7 +3,7 @@
 [![Code Climate](https://codeclimate.com/github/ustrajunior/keepup/badges/gpa.svg)](https://codeclimate.com/github/ustrajunior/keepup)
 [![Build Status](https://travis-ci.org/ustrajunior/keepup.svg?branch=master)](https://travis-ci.org/ustrajunior/keepup)
 
-Keepup is a command line utility to update your records on [Cloudflare](https://www.cloudflare.com/). It will keep the last IP you updated, so will not be necessary update the record every single time.
+Keepup is a command line utility to update your records on [Cloudflare](https://www.cloudflare.com/). 
 
 ## Instalation
 
@@ -15,42 +15,49 @@ go get -u github.com/ustrajunior/keepup
 
 ## Configuration
 
-By default, Keepup will use the file: **$HOME/.keepup.yaml** but you can customize this passing the option --config="/path/to/file.yaml". The config file will contain your credentials to your Cloudflare account.
+By default, Keepup will use the file: **$HOME/.keepup.toml(yaml|json)** but you can customize this passing the option --config="/path/to/file.toml". The config file will contain your credentials to your Cloudflare account.
 
-The .keepup.yaml has the following format:
+The .keepup.toml has the following format:
 
 ```
-cfKey: "your cloudflare key"
-cfEmail: "your cloudflare email"
+default = "example"
+
+[example]
+  domain = "example.com"
+  cfKey = "123456"
+  cfEmail = "your@email.com"
+  netInter = "en0"
+
+[other]
+  domain = "other.com"
+  cfKey = "67890"
+  cfEmail = "other@email.com"
+  netInter = "en0"
 ```
 
 ## Using
 
-To set a new value for your DNS record, you have to pass the **zone** and **dns** flags when calling the Keepup command.
+To set a new value for your DNS record, you have to pass the **dns** flags when calling the Keepup command on the following formats.
 
 ```
-keepup update --zone="domain.com" --dns="sub.domain.com"
+keepup update --dns subdomain
+keepup update --dns example.com
+keepup update --dns subdomain.example.com
 ```
-
-the **zone** is the domain you want to update, if you have more than 1 domain on your account, choose the one you want to work on.
 
 **dns** is the DNS record you want to update. It could be a subdomain or the main domain.
 
-Passing only this two flags, Keepup will update your DNS record with your current public IP. To set a specify IP to update, you have to pass the **ip** flag, like this:
+It will use the ip of the interface you setup on the netInter key on configuration file. If you want set a custom ip, just use the **ip** flag.
 
 ```
-keepup update --zone="domain.com" --dns="sub.domain.com" --ip="127.0.0.1"
+keepup update --dns subdomain --ip 127.0.0.1
 ```
 
-All your domains with IPs will be stored in the file **$HOME/.keepup/keepup.db**. The IP on this file will be checked before the update occurred on your Cloudflare account, and if the IP you are passing is the same on the file, the update will not happen.
-
-To force the update, you need to pass the **force** flag.
+To use a separated account, use the **account** flag. 
 
 ```
-keepup update --zone="domain.com" --dns="sub.domain.com" --force
+keepup update --dns subdomain --account other
 ```
-
-This way, the IP will be updated and the new IP will be saved on the local file.
 
 ## License
 

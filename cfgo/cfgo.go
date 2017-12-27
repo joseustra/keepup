@@ -3,6 +3,7 @@ package cfgo
 import (
 	"fmt"
 	"io/ioutil"
+	"net"
 	"net/http"
 	"strings"
 )
@@ -25,6 +26,36 @@ func GetIPV4IP() (string, error) {
 // GetIPV6IP gets the current external ipv6 ip
 func GetIPV6IP() (string, error) {
 	return getExternalIP("ipv6")
+}
+
+// GetInterfaceIPV4 returns the ipv4 for the given interface
+func GetInterfaceIPV4(iface string) (string, error) {
+	interfaces, err := net.Interfaces()
+	if err != nil {
+		return "", err
+	}
+
+	var ip string
+
+	for _, i := range interfaces {
+		if i.Name == iface {
+			addrs, err := i.Addrs()
+			if err != nil {
+				return "", err
+			}
+
+			for _, a := range addrs {
+				if ipnet, ok := a.(*net.IPNet); ok && !ipnet.IP.IsLoopback() {
+					if ipnet.IP.To4() != nil {
+						ip = ipnet.IP.String()
+						break
+					}
+				}
+			}
+		}
+	}
+
+	return ip, nil
 }
 
 func getExternalIP(p string) (string, error) {

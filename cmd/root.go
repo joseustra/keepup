@@ -22,6 +22,7 @@ package cmd
 
 import (
 	"fmt"
+	"log"
 	"os"
 
 	"github.com/cloudflare/cloudflare-go"
@@ -33,12 +34,10 @@ import (
 var (
 	api       *cloudflare.API
 	cfgFile   string
-	zone      string
-	dnsRecord string
+	account   string
 	ip        string
-	force     bool
+	dnsRecord string
 
-	storage  *cfgo.Bolt
 	cfClient *cfgo.CloudflareClient
 )
 
@@ -57,18 +56,15 @@ func Execute() {
 		fmt.Println(err)
 		os.Exit(-1)
 	}
-
-	storage.DB.Close()
 }
 
 func init() {
 	cobra.OnInitialize(initConfig)
 
 	RootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.keepup.yaml)")
-	RootCmd.PersistentFlags().StringVar(&zone, "zone", "", "the dns zone to work on (domain.com)")
-	RootCmd.PersistentFlags().StringVar(&dnsRecord, "dns", "", "the dns record to be updated (my.domain.com)")
+	RootCmd.PersistentFlags().StringVar(&account, "account", "", "the account to work on")
+	RootCmd.PersistentFlags().StringVar(&dnsRecord, "dns", "", "the dns record to be updated (domain.com / my.domain.com)")
 	RootCmd.PersistentFlags().StringVar(&ip, "ip", "", "the ip that will be used to update the dns record (127.0.0.1)")
-	RootCmd.PersistentFlags().BoolVar(&force, "force", false, "forces the dns update even if the ip is the same")
 }
 
 // initConfig reads in config file and ENV variables if set.
@@ -76,22 +72,37 @@ func initConfig() {
 	if cfgFile != "" { // enable ability to specify config file via flag
 		viper.SetConfigFile(cfgFile)
 	} else {
-		viper.SetConfigName(".keepup") // name of config file (without extension)
-		viper.AddConfigPath("$HOME")   // adding home directory as first search path
-		viper.AutomaticEnv()           // read in environment variables that match
+		viper.AddConfigPath("$HOME")
+		viper.SetConfigName(".keepup")
 	}
+	viper.AutomaticEnv()
 
 	// If a config file is found, read it in.
-	if err := viper.ReadInConfig(); err == nil {
-		fmt.Println("Using config file:", viper.ConfigFileUsed())
+	if err := viper.ReadInConfig(); err != nil {
+		log.Fatalf("could not read the config file: %v", err)
+	}
+	fmt.Println("Using config file:", viper.ConfigFileUsed())
+
+	if account == "" {
+		if viper.GetString("default") == "" {
+			log.Fatal("you must define a --account flag or set the default option on the config file")
+		}
+		account = viper.GetString("default")
+	}
+
+	if dnsRecord == "" {
+		log.Fatal("you must define a --dns flag")
 	}
 
 	var err error
-	storage = cfgo.NewBolt(fmt.Sprintf("%s/.keepup/", os.Getenv("HOME")))
 
-	cfClient, err = cfgo.NewCloudflareClient(viper.GetString("cfKey"), viper.GetString("cfEmail"))
+	cfClient, err = cfgo.NewCloudflareClient(getKey("cfKey"), getKey("cfEmail"))
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(-1)
 	}
+}
+
+func getKey(k string) string {
+	return viper.GetString(fmt.Sprintf("%s.%s", account, k))
 }

@@ -3,6 +3,7 @@ package cfgo
 import (
 	"errors"
 	"fmt"
+	"regexp"
 	"strings"
 )
 
@@ -12,49 +13,27 @@ var (
 )
 
 // UpdateRecord updates the DNS record
-func UpdateRecord(db Storage, client Client, zone, dns, ip string, force bool) error {
-	var err error
-	var currentIP string
-	domain := &Domain{}
-
-	if len(ip) >= 7 {
-		currentIP = ip
-	} else {
-		currentIP, err = GetIPV4IP()
-		if err != nil {
-			return err
-		}
+func UpdateRecord(client Client, zone, dns, ip string) error {
+	re := regexp.MustCompile(`\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}`)
+	if !re.MatchString(ip) {
+		return fmt.Errorf("invalid ip address, too short: %s", ip)
 	}
 
-	if !force {
-		domain, err = db.Find(fmt.Sprintf("%s-%s", zone, dns))
-		if err != nil {
-			return err
-		}
-
-		if len(domain.IP) >= 7 {
-			if domain.IP == currentIP {
-				return ErrSameIP
-			}
-		}
+	if !strings.Contains(dns, zone) {
+		dns = fmt.Sprintf("%s.%s", dns, zone)
 	}
 
-	domain, err = client.GetDNSRecord(zone, dns)
+	domain, err := client.GetDNSRecord(zone, dns)
 	if err != nil {
 		return err
 	}
 
-	if domain.IP != currentIP {
-		domain.IP = strings.TrimSpace(currentIP)
+	if domain.IP != ip {
+		domain.IP = strings.TrimSpace(ip)
 		err = client.UpdateDNSRecord(domain)
 		if err != nil {
 			return err
 		}
-	}
-
-	err = db.Save(domain)
-	if err != nil {
-		return err
 	}
 
 	fmt.Printf("DNS record updated: %s %s\n", domain.DNS, domain.IP)
